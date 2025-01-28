@@ -20,28 +20,27 @@ public class CategoriesController : ControllerBase
         _repository = repository;
         _logger = logger;
     }
-    
+
     [HttpGet]
     [ServiceFilter(typeof(ApiLoggingFilter))]
     public ActionResult<IEnumerable<Category>> GetAll()
     {
-        var categories = _repository.GetCategries();
-        
+        var categories = _repository.GetAll();
+
         if (categories is null) return NotFound("Nenhuma categoria encontrada");
-        
+
         return Ok(categories);
     }
 
     [HttpGet("{id:int:min(1)}")]
     public ActionResult<Category> GetById(int id)
     {
-        var category = _repository.GetCategory(id);
+        var category = _repository.Get(category => category.Id == id);
 
         if (category is not null) return Ok(category);
-        
+
         _logger.LogWarning($"Nenhuma categoria encontrada: {id}");
         return NotFound("Nenhuma categoria encontrada");
-
     }
 
     [HttpPost]
@@ -52,9 +51,9 @@ public class CategoriesController : ControllerBase
             _logger.LogWarning($"Dados da categoria inválidos - {category}");
             return BadRequest("Dados da categoria inválidos.");
         }
-            
+
         var createdCategory = _repository.Create(category);
-        
+
         return CreatedAtRoute(nameof(GetById), new { id = createdCategory.Id }, createdCategory);
     }
 
@@ -66,7 +65,7 @@ public class CategoriesController : ControllerBase
             _logger.LogWarning($"Dados da categoria inválidos - {category}");
             return BadRequest("Dados da categoria inválidos.");
         }
-        
+
         _repository.Update(category);
         return Ok();
     }
@@ -74,11 +73,11 @@ public class CategoriesController : ControllerBase
     [HttpDelete("{id:int:min(1)}")]
     public ActionResult Delete(int id)
     {
-        var category = _repository.GetCategory(id);
-        
+        var category = _repository.Get(category => category.Id == id);
+
         if (category is null) return NotFound();
 
-        var deletedCategory = _repository.Delete(id);
+        var deletedCategory = _repository.Delete(category);
         return Ok(deletedCategory);
     }
 }

@@ -20,30 +20,40 @@ public class ProductsController : ControllerBase
     [HttpGet]
     public ActionResult<IEnumerable<Product>> GetAll()
     {
-        var products = _repository.GetProducts().ToList();
-        
+        var products = _repository.GetAll();
+
         if (products is null) return NotFound("Nenhum produto encontrado");
-        
+
         return Ok(products);
     }
 
     [HttpGet("{id:int:min(1)}", Name = "GetProductById")]
     public ActionResult<Product> GetById(int id)
     {
-        var product = _repository.GetProduct(id);
-        
+        var product = _repository.Get(product => product.Id == id);
+
         if (product is null) return NotFound("Nenhum produto encontrado");
-        
+
         return product;
+    }
+
+    [HttpPost("products/{id:int}")]
+    public ActionResult<IEnumerable<Product>> GetProductsCategory(int id)
+    {
+        var products = _repository.GetByCategory(id);
+
+        if (products is null) return NotFound("Nenhum produto encontrado");
+
+        return Ok(products);
     }
 
     [HttpPost]
     public ActionResult Create(Product product)
     {
         if (product is null) return BadRequest();
-        
+
         var newProduct = _repository.Create(product);
-        
+
         return CreatedAtRoute(nameof(GetById), new { id = product.Id }, newProduct);
     }
 
@@ -51,21 +61,22 @@ public class ProductsController : ControllerBase
     public ActionResult Update(int id, Product product)
     {
         if (id != product.Id) return BadRequest();
-        
-        bool successOnUpdate = _repository.Update(product);
-        
-        if (successOnUpdate) return Ok(product);
-        
+
+        var updatedProduct = _repository.Update(product);
+
+        if (updatedProduct is not null) return Ok(product);
+
         return StatusCode(304, "Falha ao atualizar o produto.");
     }
 
     [HttpDelete("{id:int:min(1)}")]
     public ActionResult Delete(int id)
     {
-        bool successOnDelete = _repository.Delete(id);
-        
-        if (successOnDelete) return Ok($"Produto de ID -{id}- foi deletado.");
-        
-        return StatusCode(304, "Falha ao deletar o produto.");
+        var product = _repository.Get(product => product.Id == id);
+
+        if (product is null) return NotFound("Falha ao deletar o produto.");
+
+        _repository.Delete(product);
+        return Ok($"Produto de ID -{id}- foi deletado.");
     }
 }
