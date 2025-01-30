@@ -1,8 +1,8 @@
-using APICatalogo.Context;
+using APICatalogo.DTOs;
 using APICatalogo.Models;
 using APICatalogo.Repositories;
+using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace APICatalogo.Controllers;
 
@@ -11,66 +11,75 @@ namespace APICatalogo.Controllers;
 public class ProductsController : ControllerBase
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IMapper _mapper;
 
-    public ProductsController(IUnitOfWork unitOfWork)
+    public ProductsController(IUnitOfWork unitOfWork, IMapper mapper)
     {
         _unitOfWork = unitOfWork;
+        _mapper = mapper;
     }
 
     [HttpGet]
-    public ActionResult<IEnumerable<Product>> GetAll()
+    public ActionResult<IEnumerable<ProductDTO>> GetAll()
     {
         var products = _unitOfWork.ProductRepository.GetAll();
 
         if (products is null) return NotFound("Nenhum produto encontrado");
 
-        return Ok(products);
+        var productsDto = _mapper.Map<IEnumerable<ProductDTO>>(products);
+        return Ok(productsDto);
     }
 
     [HttpGet("{id:int:min(1)}", Name = "GetProductById")]
-    public ActionResult<Product> GetById(int id)
+    public ActionResult<ProductDTO> GetById(int id)
     {
         var product = _unitOfWork.ProductRepository.Get(product => product.Id == id);
 
         if (product is null) return NotFound("Nenhum produto encontrado");
 
-        return product;
+        var productDto = _mapper.Map<ProductDTO>(product);
+        return productDto;
     }
 
     [HttpPost("products/{id:int}")]
-    public ActionResult<IEnumerable<Product>> GetProductsCategory(int id)
+    public ActionResult<IEnumerable<ProductDTO>> GetProductsCategory(int id)
     {
         var products = _unitOfWork.ProductRepository.GetByCategory(id);
 
         if (products is null) return NotFound("Nenhum produto encontrado");
 
-        return Ok(products);
+        var produtsDtoList = _mapper.Map<IEnumerable<ProductDTO>>(products);
+        return Ok(produtsDtoList);
     }
 
     [HttpPost]
-    public ActionResult Create(Product product)
+    public ActionResult<ProductDTO> Create(ProductDTO productDto)
     {
-        if (product is null) return BadRequest();
-
+        if (productDto is null) return BadRequest();
+        
+        var product = _mapper.Map<Product>(productDto);
         var newProduct = _unitOfWork.ProductRepository.Create(product);
         _unitOfWork.Commit();
-
-        return CreatedAtRoute(nameof(GetById), new { id = product.Id }, newProduct);
+        
+        var newProductDto = _mapper.Map<ProductDTO>(newProduct);
+        return CreatedAtRoute(nameof(GetById), new { id = product.Id }, newProductDto);
     }
 
     [HttpPut("{id:int:min(1)}")]
-    public ActionResult Update(int id, Product product)
+    public ActionResult<ProductDTO> Update(int id, ProductDTO productDto)
     {
-        if (id != product.Id) return BadRequest();
+        if (id != productDto.Id) return BadRequest();
 
+        var product = _mapper.Map<Product>(productDto);
         var updatedProduct = _unitOfWork.ProductRepository.Update(product);
         _unitOfWork.Commit();
 
-        return updatedProduct is not null ? Ok(product) : StatusCode(304, "Falha ao atualizar o produto.");
+        var updatedProductDto = _mapper.Map<ProductDTO>(updatedProduct);
+        return updatedProduct is not null ? Ok(updatedProductDto) : StatusCode(304, "Falha ao atualizar o produto.");
     }
 
     [HttpDelete("{id:int:min(1)}")]
-    public ActionResult Delete(int id)
+    public ActionResult<ProductDTO> Delete(int id)
     {
         var product = _unitOfWork.ProductRepository.Get(product => product.Id == id);
 
@@ -78,6 +87,8 @@ public class ProductsController : ControllerBase
 
         _unitOfWork.ProductRepository.Delete(product);
         _unitOfWork.Commit();
-        return Ok($"Produto de ID -{id}- foi deletado.");
+        
+        var deletedProductDto = _mapper.Map<ProductDTO>(product);
+        return Ok(deletedProductDto);
     }
 }
