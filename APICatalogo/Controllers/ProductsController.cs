@@ -2,6 +2,7 @@ using APICatalogo.DTOs;
 using APICatalogo.Models;
 using APICatalogo.Repositories;
 using AutoMapper;
+using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 
 namespace APICatalogo.Controllers;
@@ -76,6 +77,28 @@ public class ProductsController : ControllerBase
 
         var updatedProductDto = _mapper.Map<ProductDTO>(updatedProduct);
         return updatedProduct is not null ? Ok(updatedProductDto) : StatusCode(304, "Falha ao atualizar o produto.");
+    }
+
+    [HttpPatch("{id:int:min(1)}/updatePartial")]
+    public ActionResult<ProductDTOUpdateResponse> UpdatePartial(int id, JsonPatchDocument<ProductDTOUpdateRequest> productDto)
+    {
+        if (productDto is null || id <= 0) return BadRequest();
+        
+        var product = _unitOfWork.ProductRepository.Get(product => product.Id == id);
+
+        if (product is null) return NotFound();
+        
+        var productUdateRequest = _mapper.Map<ProductDTOUpdateRequest>(product);
+        productDto.ApplyTo(productUdateRequest, ModelState);
+        
+        if (!ModelState.IsValid || TryValidateModel(product)) return BadRequest(ModelState);
+        
+        _mapper.Map(productUdateRequest, product);
+        _unitOfWork.ProductRepository.Update(product);
+        _unitOfWork.Commit();
+        
+        var productDtoUpdateResponse = _mapper.Map<ProductDTOUpdateResponse>(product);
+        return Ok(productDtoUpdateResponse);
     }
 
     [HttpDelete("{id:int:min(1)}")]
