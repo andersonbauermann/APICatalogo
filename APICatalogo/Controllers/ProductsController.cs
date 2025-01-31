@@ -88,12 +88,12 @@ public class ProductsController : ControllerBase
 
         if (product is null) return NotFound();
         
-        var productUdateRequest = _mapper.Map<ProductDTOUpdateRequest>(product);
-        productDto.ApplyTo(productUdateRequest, ModelState);
+        var productUpdateRequest = _mapper.Map<ProductDTOUpdateRequest>(product);
+        productDto.ApplyTo(productUpdateRequest, ModelState);
         
         if (!ModelState.IsValid || TryValidateModel(product)) return BadRequest(ModelState);
         
-        _mapper.Map(productUdateRequest, product);
+        _mapper.Map(productUpdateRequest, product);
         _unitOfWork.ProductRepository.Update(product);
         _unitOfWork.Commit();
         
