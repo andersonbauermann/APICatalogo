@@ -28,7 +28,7 @@ public static class CategoryDtoMappingExtensions
         };
     }
 
-    public static IEnumerable<CategoryDTO> ToCategoryDtos(this IEnumerable<Category> categories)
+    public static IEnumerable<CategoryDTO> ToCategoryDtoList(this IEnumerable<Category> categories)
     {
         if (categories is null || !categories.Any()) return [];
         
