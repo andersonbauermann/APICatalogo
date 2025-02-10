@@ -7,4 +7,5 @@ public interface IProductRepository : IRepository<Product>
 {
     PagedList<Product> GetProducts(PaginationParameters paginationParameters);
     IEnumerable<Product> GetByCategory(int id);
+    PagedList<Product> GetFilteredByPrice(ProductsFilterPrice filter);
 }

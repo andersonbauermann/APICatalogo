@@ -41,16 +41,19 @@ public class CategoriesController : ControllerBase
     {
         var categories = _unitOfWork.CategoryRepository.GetCategeories(paginationParameters);
 
-        var metadata = new
-        {
-            categories.CurrentPage,
-            categories.PageSize,
-            categories.TotalCount,
-            categories.TotalPages,
-            categories.HasPreviousPage,
-            categories.HasNextPage
-        };
-        Response.Headers.Append("X-Pagination", JsonConvert.SerializeObject(metadata));
+        HttpPaginationHeader.AddHeader(Response, categories);
+        
+        var categoriesDto = categories.ToCategoryDtoList();
+        
+        return Ok(categoriesDto);
+    }
+    
+    [HttpGet("filter/name/pagination")]
+    public ActionResult<IEnumerable<CategoryDTO>> GetAllPaginationFiltered([FromQuery] CategoryFilterName parameters)
+    {
+        var categories = _unitOfWork.CategoryRepository.GetCategeoriesByName(parameters);
+
+        HttpPaginationHeader.AddHeader(Response, categories);
         
         var categoriesDto = categories.ToCategoryDtoList();
         

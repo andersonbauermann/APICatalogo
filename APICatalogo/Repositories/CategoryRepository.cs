@@ -13,8 +13,21 @@ public class CategoryRepository(AppDbContext context) : Repository<Category>(con
             .OrderBy(p => p.Id)
             .AsQueryable();
         var categoriesPaginated = PagedList<Category>
-            .ToPagedList(categories, paginationParameters.PageNumber, PaginationParameters.PageSize);
+            .ToPagedList(categories, paginationParameters.PageNumber, paginationParameters.PageSize);
         
         return categoriesPaginated;
+    }
+
+    public PagedList<Category> GetCategeoriesByName(CategoryFilterName parameters)
+    {
+        var categories = GetAll().AsQueryable();
+        
+        if (!string.IsNullOrEmpty(parameters.Name)) 
+            categories = categories.Where(c => c.Name.Contains(parameters.Name));
+        
+        var filteredCategories = PagedList<Category>
+            .ToPagedList(categories, parameters.PageNumber, parameters.PageSize);
+        
+        return filteredCategories;
     }
 }
