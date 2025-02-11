@@ -6,7 +6,7 @@ public class UnitOfWork : IUnitOfWork
 {
     private IProductRepository? _productRepository;
     private ICategoryRepository? _categoryRepository;
-    public AppDbContext _context;
+    private readonly AppDbContext _context;
     
     public UnitOfWork(AppDbContext context)
     {
@@ -16,9 +16,10 @@ public class UnitOfWork : IUnitOfWork
     public IProductRepository ProductRepository => _productRepository ??= new ProductRepository(_context);
     public ICategoryRepository CategoryRepository => _categoryRepository ??= new CategoryRepository(_context);
     
-    public void Commit()
+    public Task CommitAsync()
     {
-        _context.SaveChanges();
+        _context.SaveChangesAsync();
+        return Task.CompletedTask;
     }
 
     public void Dispose()

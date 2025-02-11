@@ -2,31 +2,36 @@ using APICatalogo.Context;
 using APICatalogo.Models;
 using APICatalogo.Pagination;
 using Microsoft.EntityFrameworkCore;
+using X.PagedList;
+using X.PagedList.Extensions;
 
 namespace APICatalogo.Repositories;
 
 public class CategoryRepository(AppDbContext context) : Repository<Category>(context), ICategoryRepository
 {
-    public PagedList<Category> GetCategeories(PaginationParameters paginationParameters)
+    public async Task<IPagedList<Category>> GetCategoriesAsync(PaginationParameters paginationParameters)
     {
-        var categories = GetAll()
+        var categories = await GetAllAsync();
+        var sortedCategories = categories
             .OrderBy(p => p.Id)
             .AsQueryable();
-        var categoriesPaginated = PagedList<Category>
-            .ToPagedList(categories, paginationParameters.PageNumber, paginationParameters.PageSize);
         
-        return categoriesPaginated;
+        //var categoriesPage = Pagination.PagedList<Category>
+        //    .ToPagedList(sortedCategories, paginationParameters.PageNumber, paginationParameters.PageSize);
+        var categoriesPage = sortedCategories.ToPagedList(paginationParameters.PageNumber, paginationParameters.PageSize);
+        return categoriesPage;
     }
 
-    public PagedList<Category> GetCategeoriesByName(CategoryFilterName parameters)
+    public async Task<IPagedList<Category>> GetCategoriesByNameAsync(CategoryFilterName parameters)
     {
-        var categories = GetAll().AsQueryable();
+        var categories = await GetAllAsync();
         
         if (!string.IsNullOrEmpty(parameters.Name)) 
             categories = categories.Where(c => c.Name.Contains(parameters.Name));
         
-        var filteredCategories = PagedList<Category>
-            .ToPagedList(categories, parameters.PageNumber, parameters.PageSize);
+        //var filteredCategories = Pagination.PagedList<Category>
+        //    .ToPagedList(categories.AsQueryable(), parameters.PageNumber, parameters.PageSize);
+        var filteredCategories = categories.ToPagedList(parameters.PageNumber, parameters.PageSize);
         
         return filteredCategories;
     }

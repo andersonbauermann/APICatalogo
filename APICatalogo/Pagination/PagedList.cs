@@ -2,8 +2,9 @@ namespace APICatalogo.Pagination;
 
 public class PagedList<T> : List<T> where T : class     
 {
-    public int CurrentPage { get; private set; }
-    public int TotalPages { get; private set; }
+    //Essa classe de paginação foi substituída pela biblioteca X.PagedList
+    public int CurrentPage { get; }
+    public int TotalPages { get; }
     public int TotalCount { get; private set; }
     public int PageSize { get; private set; }
     
