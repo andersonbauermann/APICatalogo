@@ -17,13 +17,15 @@ public class AuthController : ControllerBase
     private readonly UserManager<User> _userManager;
     private readonly RoleManager<IdentityRole> _roleManager;
     private readonly IConfiguration _configuration;
+    private readonly ILogger _logger;
 
-    public AuthController(ITokenService tokenService, UserManager<User> userManager, RoleManager<IdentityRole> roleManager, IConfiguration configuration)
+    public AuthController(ITokenService tokenService, UserManager<User> userManager, RoleManager<IdentityRole> roleManager, IConfiguration configuration, ILogger logger)
     {
         _tokenService = tokenService;
         _userManager = userManager;
         _roleManager = roleManager;
         _configuration = configuration;
+        _logger = logger;
     }
 
     [HttpPost]
@@ -143,5 +145,79 @@ public class AuthController : ControllerBase
         await _userManager.UpdateAsync(user);
         
         return NoContent();
+    }
+
+    [HttpPost]
+    [Route("createRole")]
+    public async Task<IActionResult> CreateRole(string roleName)
+    {
+        var roleExist = await _roleManager.RoleExistsAsync(roleName);
+
+        if (!roleExist)
+        {
+            var roleResult = await _roleManager.CreateAsync(new IdentityRole(roleName));
+
+            if (roleResult.Succeeded)
+            {
+                _logger.LogInformation(1, "Role created successfully");
+
+                return StatusCode(StatusCodes.Status201Created, new Response
+                {
+                    Status = "Success",
+                    Message = $"Role {roleName} created successfully!"
+                });
+            }
+            
+            _logger.LogError(2, "Role creation failed");
+
+            return StatusCode(StatusCodes.Status400BadRequest, new Response
+            {
+                Status = "Error",
+                Message = "Failure to insert the new role."
+            });
+        }
+
+        return StatusCode(StatusCodes.Status400BadRequest, new Response
+        {
+            Status = "Error",
+            Message = $"Role {roleName} already exist."
+        });
+    }
+
+    [HttpPost]
+    [Route("addUserToRole")]
+    public async Task<IActionResult> AddUserToRole(string email, string roleName)
+    {
+        var user = await _userManager.FindByEmailAsync(email);
+
+        if (user is not null)
+        {
+            var result = await _userManager.AddToRoleAsync(user, roleName);
+
+            if (result.Succeeded)
+            {
+                _logger.LogInformation(1, $"User {email} added to role {roleName} successfully");
+
+                return StatusCode(StatusCodes.Status201Created, new Response
+                {
+                    Status = "Success",
+                    Message = $"User {email} added to role {roleName} successfully"
+                });
+            }
+            
+            _logger.LogError(2, "User creation failed");
+            return StatusCode(StatusCodes.Status400BadRequest, new Response
+            {
+                Status = "Error",
+                Message = "Failure to insert user to role."
+            });
+        }
+        
+        _logger.LogError(2, "User creation failed");
+        return StatusCode(StatusCodes.Status400BadRequest, new Response
+        {
+            Status = "Error",
+            Message = $"User {email} not located."
+        });
     }
 }
