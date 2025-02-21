@@ -17,15 +17,15 @@ public class AuthController : ControllerBase
     private readonly UserManager<User> _userManager;
     private readonly RoleManager<IdentityRole> _roleManager;
     private readonly IConfiguration _configuration;
-    private readonly ILogger _logger;
+    //private readonly ILogger _logger;
 
-    public AuthController(ITokenService tokenService, UserManager<User> userManager, RoleManager<IdentityRole> roleManager, IConfiguration configuration, ILogger logger)
+    public AuthController(ITokenService tokenService, UserManager<User> userManager, RoleManager<IdentityRole> roleManager, IConfiguration configuration)
     {
         _tokenService = tokenService;
         _userManager = userManager;
         _roleManager = roleManager;
         _configuration = configuration;
-        _logger = logger;
+        //_logger = logger;
     }
 
     [HttpPost]
@@ -42,6 +42,7 @@ public class AuthController : ControllerBase
             {
                 new(ClaimTypes.Name, user.UserName!),
                 new(ClaimTypes.Email, user.Email!),
+                new("id", user.UserName!),
                 new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
             
@@ -131,8 +132,8 @@ public class AuthController : ControllerBase
         });
     }
 
-    [Authorize]
     [HttpPost]
+    [Authorize(Policy = "ExclusiveOnly")]
     [Route("revoke/{userName}")]
     public async Task<IActionResult> Revoke(string userName)
     {
@@ -148,6 +149,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Policy = "SuperAdminOnly")]
     [Route("createRole")]
     public async Task<IActionResult> CreateRole(string roleName)
     {
@@ -159,7 +161,7 @@ public class AuthController : ControllerBase
 
             if (roleResult.Succeeded)
             {
-                _logger.LogInformation(1, "Role created successfully");
+                //_logger.LogInformation(1, "Role created successfully");
 
                 return StatusCode(StatusCodes.Status201Created, new Response
                 {
@@ -168,7 +170,7 @@ public class AuthController : ControllerBase
                 });
             }
             
-            _logger.LogError(2, "Role creation failed");
+            //_logger.LogError(2, "Role creation failed");
 
             return StatusCode(StatusCodes.Status400BadRequest, new Response
             {
@@ -185,6 +187,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Policy = "SuperAdminOnly")]
     [Route("addUserToRole")]
     public async Task<IActionResult> AddUserToRole(string email, string roleName)
     {
@@ -196,7 +199,7 @@ public class AuthController : ControllerBase
 
             if (result.Succeeded)
             {
-                _logger.LogInformation(1, $"User {email} added to role {roleName} successfully");
+                //_logger.LogInformation(1, $"User {email} added to role {roleName} successfully");
 
                 return StatusCode(StatusCodes.Status201Created, new Response
                 {
@@ -205,7 +208,7 @@ public class AuthController : ControllerBase
                 });
             }
             
-            _logger.LogError(2, "User creation failed");
+            //_logger.LogError(2, "User creation failed");
             return StatusCode(StatusCodes.Status400BadRequest, new Response
             {
                 Status = "Error",
@@ -213,7 +216,7 @@ public class AuthController : ControllerBase
             });
         }
         
-        _logger.LogError(2, "User creation failed");
+        //_logger.LogError(2, "User creation failed");
         return StatusCode(StatusCodes.Status400BadRequest, new Response
         {
             Status = "Error",
