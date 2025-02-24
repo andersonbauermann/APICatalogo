@@ -6,12 +6,14 @@ using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Newtonsoft.Json;
 
 namespace APICatalogo.Controllers;
 
 [Route("[controller]")]
 [ApiController]
+//[EnableRateLimiting("fixed_window_limit")]
 public class ProductsController : ControllerBase
 {
     private readonly IUnitOfWork _unitOfWork;

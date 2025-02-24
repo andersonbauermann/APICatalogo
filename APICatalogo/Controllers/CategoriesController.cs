@@ -5,11 +5,13 @@ using APICatalogo.Pagination;
 using APICatalogo.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace APICatalogo.Controllers;
 
 [Route("[controller]")]
 [ApiController]
+[EnableRateLimiting("fixed_window_limit")]
 public class CategoriesController : ControllerBase
 {
     private readonly IUnitOfWork _unitOfWork;
@@ -59,6 +61,7 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpGet("{id:int:min(1)}")]
+    [DisableRateLimiting]
     public async Task<ActionResult<CategoryDTO>> GetById(int id)
     {
         var category = await _unitOfWork.CategoryRepository.GetAsync(category => category.Id == id);

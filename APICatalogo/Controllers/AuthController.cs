@@ -6,26 +6,28 @@ using APICatalogo.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace APICatalogo.Controllers;
 
 [Route("[controller]")]
 [ApiController]
+[EnableRateLimiting("fixed_window_limit")]
 public class AuthController : ControllerBase
 {
     private readonly ITokenService _tokenService;
     private readonly UserManager<User> _userManager;
     private readonly RoleManager<IdentityRole> _roleManager;
     private readonly IConfiguration _configuration;
-    //private readonly ILogger _logger;
+    private readonly ILogger<AuthController> _logger;
 
-    public AuthController(ITokenService tokenService, UserManager<User> userManager, RoleManager<IdentityRole> roleManager, IConfiguration configuration)
+    public AuthController(ITokenService tokenService, UserManager<User> userManager, RoleManager<IdentityRole> roleManager, IConfiguration configuration, ILogger<AuthController> logger)
     {
         _tokenService = tokenService;
         _userManager = userManager;
         _roleManager = roleManager;
         _configuration = configuration;
-        //_logger = logger;
+        _logger = logger;
     }
 
     [HttpPost]
@@ -161,7 +163,7 @@ public class AuthController : ControllerBase
 
             if (roleResult.Succeeded)
             {
-                //_logger.LogInformation(1, "Role created successfully");
+                _logger.LogInformation(1, "Role created successfully");
 
                 return StatusCode(StatusCodes.Status201Created, new Response
                 {
@@ -170,7 +172,7 @@ public class AuthController : ControllerBase
                 });
             }
             
-            //_logger.LogError(2, "Role creation failed");
+            _logger.LogError(2, "Role creation failed");
 
             return StatusCode(StatusCodes.Status400BadRequest, new Response
             {
@@ -199,7 +201,7 @@ public class AuthController : ControllerBase
 
             if (result.Succeeded)
             {
-                //_logger.LogInformation(1, $"User {email} added to role {roleName} successfully");
+                _logger.LogInformation(1, $"User {email} added to role {roleName} successfully");
 
                 return StatusCode(StatusCodes.Status201Created, new Response
                 {
@@ -208,7 +210,7 @@ public class AuthController : ControllerBase
                 });
             }
             
-            //_logger.LogError(2, "User creation failed");
+            _logger.LogError(2, "User creation failed");
             return StatusCode(StatusCodes.Status400BadRequest, new Response
             {
                 Status = "Error",
@@ -216,7 +218,7 @@ public class AuthController : ControllerBase
             });
         }
         
-        //_logger.LogError(2, "User creation failed");
+        _logger.LogError(2, "User creation failed");
         return StatusCode(StatusCodes.Status400BadRequest, new Response
         {
             Status = "Error",

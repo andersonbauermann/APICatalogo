@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json.Serialization;
+using System.Threading.RateLimiting;
 using APICatalogo.Context;
 using APICatalogo.DTOs.Mappings;
 using APICatalogo.Extensions;
@@ -10,6 +11,7 @@ using APICatalogo.Repositories;
 using APICatalogo.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -96,6 +98,32 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
     };
 });
+//Window RateLimiting
+builder.Services.AddRateLimiter(rateLimiteOptions =>
+{
+    rateLimiteOptions.AddFixedWindowLimiter(policyName: "fixed_window_limit", options =>
+    {
+        options.PermitLimit = 1;
+        options.Window = TimeSpan.FromSeconds(5);
+        options.QueueLimit = 0;
+    });
+    rateLimiteOptions.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+});
+//Global RateLimiting
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context => 
+        RateLimitPartition.GetFixedWindowLimiter(partitionKey: context.User.Identity?.Name ?? 
+                                                               context.Request.Headers.Host.ToString(), 
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 5,
+                QueueLimit = 0,
+                Window = TimeSpan.FromSeconds(5)
+            }));
+});
 
 builder.Services.AddScoped<ApiLoggingFilter>();
 
@@ -122,6 +150,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles();
+app.UseRouting();
+app.UseRateLimiter();
 app.UseAuthorization();
 app.MapControllers();
 
