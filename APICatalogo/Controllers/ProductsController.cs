@@ -69,7 +69,7 @@ public class ProductsController : ControllerBase
         if (product is null) return NotFound("Nenhum produto encontrado");
 
         var productDto = _mapper.Map<ProductDTO>(product);
-        return productDto;
+        return Ok(productDto);
     }
 
     [HttpPost("products/{id:int}")]
